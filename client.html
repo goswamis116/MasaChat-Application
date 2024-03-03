@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MasaChat</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Additional custom styles can be added here */
+        .chat-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+        }
+        #message-input {
+            width: calc(100% - 80px); /* Adjust width to accommodate the button */
+            margin-right: 10px;
+        }
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 10px;
+        }
+        body{
+            background-color: #5E1675;
+        }
+        .chat-logo {
+            width: 60px; 
+            height: auto;
+            margin-left: 10px;
+        }
+        /* Added CSS for message list scrollbar */
+        #message-list {
+            max-height: 400px; /* Adjust as needed */
+            overflow-y: auto;
+        }
+    </style>
+    
+</head>
+<body>
+<div class="container chat-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-center mb-0" style="color: white;">MasaChat</h1>
+        <img src="https://freeiconshop.com/wp-content/uploads/edd/chat-alt-flat.png" alt="Chat Logo" class="chat-logo">
+    </div>
+    <div class="card">
+        <div class="card-body" id="message-list">
+            <!-- Message List Display -->
+        </div>
+    </div>
+    <!-- New Message Input and Send Button -->
+    <div class="input-group mb-3 mt-1">
+        <input type="text" class="form-control" id="message-input" placeholder="Type your message">
+        <div class="input-group-append ">
+            <button class="btn btn-primary" id="send-message">Send</button>
+        </div>
+        <!-- Add Delete Chat Button -->
+        <div class="input-group-append mt-2">
+            <button class="btn btn-danger" id="delete-chat">Delete Chat</button>
+        </div>
+    </div>
+</div>
+<div class="footer" style="background-color: #59D5E0;">
+    <p>&copy; KhusuMasha (2024) all rights reserved</p>
+</div>
+
+<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script>
+    // Socket code in JavaScript
+
+    const socket = io.connect('http://localhost:3000');
+
+    const username = prompt("Enter your name");
+
+    // Emit the username to the server
+    socket.emit("join", username);
+
+    // Get the elements
+    const messageInput = document.getElementById("message-input");
+    const messageList = document.getElementById("message-list");
+    const sendButton = document.getElementById("send-message");
+    const deleteChatButton = document.getElementById("delete-chat");
+
+    // Function to clear message list
+    function clearMessageList() {
+        messageList.innerHTML = "";
+    }
+
+    // Event listener for sending a new message
+    sendButton.addEventListener("click", function() {
+        // Read message from input and send to server
+        const message = messageInput.value;
+        if (message) {
+            socket.emit('new_message', message);
+            messageInput.value = "";
+        }
+    });
+
+    // Event listener for deleting chat
+    deleteChatButton.addEventListener("click", function() {
+        if (confirm("Are you sure you want to delete the chat?")) {
+            // Emit event to delete chat from the server side
+            socket.emit('delete_chat');
+            // Clear message list on the client side
+            clearMessageList();
+        }
+    });
+
+    // Display previous messages
+    socket.on('load_message', (messages) => {
+        messages.forEach(message => {
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("alert", "alert-info", "mt-2");
+            messageElement.innerText = new Date(message.timestamp).toLocaleString() + " - " + message.username + ": " + message.message;
+            messageList.appendChild(messageElement);
+        });
+    });
+
+    // Listen for broadcast message and add it to the list
+    socket.on('broadcast_message', (userMessage) => {
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("alert", "alert-success", "mt-2");
+        messageElement.innerText = userMessage.username + ": " + userMessage.message;
+        messageList.appendChild(messageElement);
+    });
+
+    // Listen for chat cleared event and clear message list
+    socket.on('chat_cleared', () => {
+        clearMessageList();
+        alert("Chat has been cleared.");
+    });
+</script>
+</body>
+</html>
