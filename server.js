@@ -4,6 +4,11 @@ import { Server } from "socket.io";
 import cors from "cors";
 import { connect } from "./config.js";
 import { chatModel } from "./chat.schema.js";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -65,6 +70,13 @@ io.on('connection', (socket) => {
             console.error("Error clearing chat:", err);
         }
     });
+});
+
+// Serve client.html as the main home page
+app.get('/', (req, res) => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    res.sendFile(__dirname + '/client.html');
 });
 
 const PORT = process.env.PORT || 3000;
