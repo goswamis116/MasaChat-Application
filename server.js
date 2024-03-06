@@ -7,6 +7,7 @@ import { chatModel } from "./chat.schema.js";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
+
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -76,9 +77,8 @@ io.on('connection', (socket) => {
 app.get('/', (req, res) => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
-    res.sendFile(__dirname + '/client.html');
+    res.sendFile(`${__dirname}/client.html`);
 });
-
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`App is listening on port ${PORT}`);

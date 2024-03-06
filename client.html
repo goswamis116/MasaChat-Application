@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MasaChat</title>
     <!-- Include Bootstrap CSS -->
+    <!-- Include jQuery before Bootstrap -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <style>
         /* Additional custom styles can be added here */
         .chat-container {
@@ -68,47 +73,36 @@
     <p>&copy; KhusuMasha (2024) all rights reserved</p>
 </div>
 
-<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<!-- Username Input Modal -->
+<div id="username-modal" class="modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enter Your Name</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="username-input" class="form-control" placeholder="Your Name">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="set-username">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.js"></script>
 <script>
     // Socket code in JavaScript
 
-    const socket = io.connect('http://localhost:3000');
-
-    const username = prompt("Enter your name");
-
-    // Emit the username to the server
-    socket.emit("join", username);
-
-    // Get the elements
-    const messageInput = document.getElementById("message-input");
-    const messageList = document.getElementById("message-list");
-    const sendButton = document.getElementById("send-message");
-    const deleteChatButton = document.getElementById("delete-chat");
+    const socket = io.connect(window.location.origin);
 
     // Function to clear message list
     function clearMessageList() {
-        messageList.innerHTML = "";
+        document.getElementById("message-list").innerHTML = "";
     }
-
-    // Event listener for sending a new message
-    sendButton.addEventListener("click", function() {
-        // Read message from input and send to server
-        const message = messageInput.value;
-        if (message) {
-            socket.emit('new_message', message);
-            messageInput.value = "";
-        }
-    });
-
-    // Event listener for deleting chat
-    deleteChatButton.addEventListener("click", function() {
-        if (confirm("Are you sure you want to delete the chat?")) {
-            // Emit event to delete chat from the server side
-            socket.emit('delete_chat');
-            // Clear message list on the client side
-            clearMessageList();
-        }
-    });
 
     // Display previous messages
     socket.on('load_message', (messages) => {
@@ -116,7 +110,7 @@
             const messageElement = document.createElement("div");
             messageElement.classList.add("alert", "alert-info", "mt-2");
             messageElement.innerText = new Date(message.timestamp).toLocaleString() + " - " + message.username + ": " + message.message;
-            messageList.appendChild(messageElement);
+            document.getElementById("message-list").appendChild(messageElement);
         });
     });
 
@@ -125,13 +119,49 @@
         const messageElement = document.createElement("div");
         messageElement.classList.add("alert", "alert-success", "mt-2");
         messageElement.innerText = userMessage.username + ": " + userMessage.message;
-        messageList.appendChild(messageElement);
+        document.getElementById("message-list").appendChild(messageElement);
     });
 
     // Listen for chat cleared event and clear message list
     socket.on('chat_cleared', () => {
         clearMessageList();
         alert("Chat has been cleared.");
+    });
+
+    // Prompt for username
+    const usernameModal = new bootstrap.Modal(document.getElementById('username-modal'));
+    usernameModal.show();
+
+    // Set username when submitted
+    document.getElementById("set-username").addEventListener("click", function() {
+        const username = document.getElementById("username-input").value;
+        if (username.trim() !== "") {
+            socket.emit("join", username);
+            usernameModal.hide();
+        } else {
+            alert("Username cannot be empty");
+        }
+    });
+
+    // Event listener for sending a new message
+    document.getElementById("send-message").addEventListener("click", function() {
+        // Read message from input and send to server
+        const messageInput = document.getElementById("message-input");
+        const message = messageInput.value.trim();
+        if (message) {
+            socket.emit('new_message', message);
+            messageInput.value = "";
+        }
+    });
+
+    // Event listener for deleting chat
+    document.getElementById("delete-chat").addEventListener("click", function() {
+        if (confirm("Are you sure you want to delete the chat?")) {
+            // Emit event to delete chat from the server side
+            socket.emit('delete_chat');
+            // Clear message list on the client side
+            clearMessageList();
+        }
     });
 </script>
 </body>
